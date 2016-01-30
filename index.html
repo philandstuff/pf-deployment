@@ -79,18 +79,38 @@
               <span class="fragment">zip,</span>
               <span class="fragment">capistrano,</span>
               <span class="fragment">maven,</span>
+              <span class="fragment">docker,</span>
               <span class="fragment">rsync?</span>
             </p>
           </section>
           <section>
-            <h2>Package managager (n.): a tool that deploys software correctly</h2>
+            <h2>Package manager (n.): a tool that deploys software correctly</h2>
             <h2 class="fragment">(under certain assumptions)</h2>
           </section>
 	</section>
 
         <section>
+          <section><h2>rsync: the null package manager</h2></section>
           <section>
-            <h1>What is correct deployment?</h1>
+            <h2>Let's not kid ourselves: "deployment" is just "copying some files"</h2>
+          </section>
+          <section>
+            <h2>If rsync can do it, why can't my package manager?</h2>
+          </section>
+          <section>
+            <h2>rsync can just as easily deploy <i>incorrectly</i> as <i>correctly</i></h2>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>What is correct deployment?</h2>
+            <div class="fragment">
+              <blockquote>given identical inputs, the software
+                should behave the same on an end-user machine as on the developer
+                machine</blockquote>
+              <p>-- from <a href="http://nixos.org/~eelco/pubs/phd-thesis.pdf">http://nixos.org/~eelco/pubs/phd-thesis.pdf</a>, section 1.1</p>
+            </div>
           </section>
           <section>
             <h2>What goes wrong with deployments?</h2>
@@ -98,7 +118,305 @@
             <h3>Wrong versions of dependencies</h3>
             <h3>Dependency conflicts</h3>
           </section>
+          <section>
+            <h2>Missing dependencies</h2>
+            <h3>Outside scope of package manager (libyaml, libxml for ruby or python)</h3>
+            <h3>Accidentally missed by package (don't all machines have zlib? openssl?)</h3>
+          </section>
+          <section>
+            <h2>Wrong versions of dependencies</h2>
+            <h3>"It works on my machine"</h3>
+            <h3>CI and production don't have same version of library</h3>
+          </section>
+          <section>
+            <h2>Conflicting dependencies</h2>
+            <h3>My app was working fine, until someone deployed something that needed a later version of libfoo</h3>
+            <h3>Now my app is broken because of the libfoo change</h3>
+            <h3>DLL hell, Cabal hell</h3>
+            <h3>Installing or upgrading one package shouldn't break other packages</h3>
+          </section>
 	</section>
+
+        <section>
+          <section><h1>Basic principles</h1></section>
+          <section>
+            <h2>Use cases</h2>
+            <h3>Arbitrary software (not limited by language)</h3>
+            <h3>Allow multiple package versions</h3>
+            <h3>Allow unprivileged users to install software</h3>
+          </section>
+          <section>
+            <h2>Dependencies</h2>
+            <h3>Identify packages by cryptographic hash</h3>
+            <h3>Hardcode the specific hash of the package version in the built artefact</h3>
+          </section>
+          <section>
+            <h2>Structure of a nix path</h2>
+            <p><code><span class="fragment highlight-current-red">/nix/store</span>/<span class="fragment highlight-current-red">n0a1y0yd54sh10p7rdi0alysscvac5x5</span>-<span class="fragment highlight-current-red">certificate-transparency</span>-<span class="fragment highlight-current-red">2016-01-14</span>/<span class="fragment highlight-current-red">bin/ct</span></code></p>
+          </section>
+          <section>
+            <h2>Showing dependencies</h2>
+            <p><code>$ nix-store --query --references /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
+            <p><code>$ nix-store --query --requisites /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
+          </section>
+          <section>
+            <h2>Locating dependencies</h2>
+            <p>Where other binaries might search for libjson in <code>/usr/lib</code> or <code>/usr/local/lib</code>, we search in
+              <code>/nix/store/6hcccvdx29r4j8n0wxl85b6mlmq0gvs1-libjson-7.6.1</code>, and <i>nowhere else</i></p>
+            <p>Only the <i>exact same version</i> is acceptable</p>
+          </section>
+          <section>
+            <h2>How to deploy a package:</h2>
+            <ul>
+            <li>Identify the package's dependencies (by hash)</li>
+            <li>Correctly deploy each of the package's dependencies (recursively if necessary)</li>
+            <li>Copy the package itself</li></ul>
+            <p>This works for <i>any</i> target machine (with matching arch & kernel): Ubuntu, RHEL, CentOS...</p>
+            <p>Command: <code>nix-copy-closure</code></p>
+          </section>
+          <section>
+            <h2>Avoids conflicts like an omnibus package</h2>
+            <h2>Shares common dependencies like a regular package manager</h2>
+          </section>
+        </section>
+
+        <section>
+          <section><h1>Aside: FHS considered harmful</h1></section>
+          <section>
+            <h2>FHS is about guessing</h2>
+            <h3>Whatever is at /usr/lib/libjson.so.1 is fine</h3>
+            <h3>v1.0.0? v1.52.65? v1.1.3-random-fork?</h3>
+            <h3>This is totally against the goal of correct deployment!</h3>
+          </section>
+        </section>
+
+        <section>
+          <section><h1>Making a nix package</h1></section>
+          <section>
+            <h2>A worked example: <a href="https://github.com/NixOS/nixpkgs/blob/3f417e627221f33d0f1807a01ae6749c71f7391f/pkgs/development/tools/sassc/default.nix">sassc</a></h2>
+            <p>An example of <code>./configure ; make ; make install</code></p>
+          </section>
+          <section>
+            <pre><code>{ stdenv, fetchurl, autoreconfHook, libsass }:
+
+stdenv.mkDerivation rec {
+  name = "sassc-${version}";
+  version = "3.3.2";
+
+  src = fetchurl {
+    url = "https://github.com/sass/sassc/archive/${version}.tar.gz";
+    sha256 = "15a2b2698639dfdc7bd6a5ba7a9ecdaf8ebb9f15503fb04dea1be3133308e41d";
+  };
+
+  patchPhase = ''
+    export SASSC_VERSION=${version}
+  '';
+
+  nativeBuildInputs = [ autoreconfHook ];
+
+  buildInputs = [ libsass ];
+
+  meta = with stdenv.lib; {
+    description = "A front-end for libsass";
+    homepage = https://github.com/sass/sassc/;
+    license = licenses.mit;
+    maintainers = with maintainers; [ codyopel pjones ];
+    platforms = platforms.unix;
+  };
+}
+</code></pre>
+          </section>
+          <section>
+            <pre><code>{ stdenv, fetchurl, autoreconfHook, libsass }:
+
+stdenv.mkDerivation rec {
+  # ...
+}
+</code></pre>
+          </section>
+          <section>
+            <pre><code>{ stdenv, fetchurl, autoreconfHook, libsass }:
+
+stdenv.mkDerivation rec {
+  name = "sassc-${version}";
+  version = "3.3.2";
+
+  src = fetchurl {
+    url = "https://github.com/sass/sassc/archive/${version}.tar.gz";
+    sha256 = "15a2b2698639dfdc7bd6a5ba7a9ecdaf8ebb9f15503fb04dea1be3133308e41d";
+  };
+
+  # ...
+}
+</code></pre>
+          </section>
+          <section>
+            <pre><code>{ stdenv, fetchurl, autoreconfHook, libsass }:
+
+stdenv.mkDerivation rec {
+  name = "sassc-${version}";
+  version = "3.3.2";
+
+  src = fetchurl # ...;
+
+  patchPhase = ''
+    export SASSC_VERSION=${version}
+  '';
+
+  nativeBuildInputs = [ autoreconfHook ];
+
+  buildInputs = [ libsass ];
+
+  # ...;
+}
+</code></pre>
+          </section>
+          <section>
+            <pre><code>{ stdenv, fetchurl, autoreconfHook, libsass }:
+
+stdenv.mkDerivation rec {
+  name = "sassc-${version}";
+  version = "3.3.2";
+
+  src = fetchurl # ...;
+
+  # ...;
+
+  meta = with stdenv.lib; {
+    description = "A front-end for libsass";
+    homepage = https://github.com/sass/sassc/;
+    license = licenses.mit;
+    maintainers = with maintainers; [ codyopel pjones ];
+    platforms = platforms.unix;
+  };
+}
+</code></pre>
+          </section>
+          <section>
+            <h2>demo</h2>
+            <p><code>nix-shell --pure -A pkgs.sassc</code></p>
+            <p><code>env | grep libsass</code></p>
+          </section>
+          <section>
+            <h2>A non-autoconf package: <a href="https://github.com/NixOS/nixpkgs/blob/3f417e627221f33d0f1807a01ae6749c71f7391f/pkgs/tools/misc/ponysay/default.nix">ponysay</a></h2>
+            <pre><code>{ stdenv, fetchurl, python3, texinfo, makeWrapper }:
+stdenv.mkDerivation rec {
+  buildInputs = [ python3 texinfo makeWrapper ];
+
+  phases = "unpackPhase installPhase fixupPhase";
+
+  installPhase = ''
+    find -type f -name "*.py" | xargs sed -i "s@/usr/bin/env python3@$python3/bin/python3@g"
+    substituteInPlace setup.py --replace \
+        "fileout.write(('#!/usr/bin/env %s\n' % env).encode('utf-8'))" \
+        "fileout.write(('#!%s/bin/%s\n' % (os.environ['python3'], env)).encode('utf-8'))"
+    python3 setup.py --prefix=$out --freedom=partial install \
+        --with-shared-cache=$out/share/ponysay \
+        --with-bash
+  '';
+}
+</code></pre>
+          </section>
+
+          <section>
+            <h2><a href="https://github.com/NixOS/nixpkgs/blob/3f417e627221f33d0f1807a01ae6749c71f7391f/pkgs/applications/misc/evilvte/default.nix">evilvte</a>: compiled-in configuration</h2>
+            <pre><code>{ stdenv, fetchgit, makeWrapper, ... configH}:
+
+stdenv.mkDerivation rec {
+  # ...;
+
+  buildPhase = ''
+    cat &gt;src/config.h &lt;&lt;EOF
+    ${configH}
+    EOF
+    make
+  '';
+}
+</code></pre>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Glossary so far</h2>
+            <dl>
+              <dt>Nix store</dt><dd>A read-only content-addressable filesystem</dd>
+              <dt>Store path</dt><dd>A path in the nix store, identified by the hash of its contents (a "package")</dd>
+              <dt>Derivation</dt><dd>A recipe for constructing a store path</dd>
+              <dt>Building</dt><dd>Creating a store path from a derivation</dd>
+              <dt>Closure</dt><dd>A store path and all of its dependencies needed to function correctly</dd>
+            </dl>
+          </section>
+        </section>
+        <section>
+          <section><h1>Nixpkgs and Hydra</h1></section>
+          <section>
+            <h2>nixpkgs: the nix package collection</h2>
+            <h3><a href="https://github.com/NixOS/nixpkgs">https://github.com/NixOS/nixpkgs</a></h3>
+            <h3>76k commits, 696 contributors</h3>
+            <h3>21-28 Jan: 59 PRs merged by 38 people</h3>
+          </section>
+          <section>
+            <h2>Substitutions</h2>
+            <h3>Nix derivations are defined in terms of source code</h3>
+            <h3>Building a derivation can be skipped by <i>substitution</i> from a prebuilt binary cache</h3>
+          </section>
+          <section>
+            <h2>hydra: the nix continuous build server</h2>
+            <h3>every new commit to nixpkgs is built on a build farm</h3>
+            <h3>binaries made available at cache.nixos.org substitution server</h3>
+          </section>
+        </section>
+
+        <section>
+          <section><h1>Profiles and environments</h1></section>
+          <section>
+            <h2>An environment is a set of installed packages</h2>
+            <h3>With corresponding environment variables PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH...</h3>
+            <h3>Multiple environments can coexist (because multiple packages are allowed)</h3>
+          </section>
+          <section>
+            <h2>A profile is a set of environments over time</h2>
+            <h3>Each environment is called a "generation"</h3>
+            <h3>Each operation on a profile creates a new generation</h3>
+            <h3>Each user can have their own profile</h3>
+          </section>
+          <section>
+            <h2>Profile operations</h2>
+            <ul>
+              <li>Install packages</li>
+              <li>Upgrade packages</li>
+              <li>Remove packages</li>
+              <li>Rollback to a previous generation</li>
+            </ul>
+          </section>
+          <section>
+            <h2>Aside: mass upgrades</h2>
+            <h3>Ever upgraded major distro release (eg 14.10 to 15.04)?</h3>
+            <h3>How do you recover?</h3>
+            <h3>Rollbacks save you here!</h3>
+          </section>
+          <section>
+            <h2>Development environments</h2>
+            <h3>An environment can also be created for a particular project context</h3>
+            <h3>Minimum necessary dependencies for project</h3>
+            <h3>We already saw this with nix-shell for building sassc</h3>
+          </section>
+        </section>
+
+        <section>
+          <section><h1>NixOS</h1></section>
+          <section>
+            <h2>Nix vs NixOS</h2>
+            <h3>Nix is just a package manager</h3>
+            <h3>Can target linux, OS X, freebsd...</h3>
+            <h3>NixOS is a linux distribution built on Nix</h3>
+          </section>
+          <section>
+            <h2>The system as a nix expression</h2>
+            <h3></h3>
+            <h3></h3>
+          </section>
+        </section>
       </div>
 
     </div>
