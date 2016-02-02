@@ -40,10 +40,13 @@
 	<section>
 	  <h1>Intro to Nix and NixOS</h1>
 	  <p>
-	    <small>Philip Potter / <a href="http://twitter.com/philandstuff">@philandstuff</a></small>
+	    Philip Potter / <a href="http://twitter.com/philandstuff">@philandstuff</a>
 	  </p>
 	  <p>
-	    <small><a href="http://philandstuff.github.io/intro-to-nix/">philandstuff.github.io/intro-to-nix/</a></small>
+	    <a href="http://philandstuff.github.io/intro-to-nix/">philandstuff.github.io/intro-to-nix/</a>
+	  </p>
+	  <p>
+	    <a href="https://gds.blog.gov.uk/jobs/">UK Government Digital Service</a>
 	  </p>
 	</section>
 
@@ -54,9 +57,6 @@
           <section>
             <h2>Nix is a package manager</h2>
             <h2>NixOS is a distro based on Nix</h2>
-          </section>
-          <section>
-            <h1>END</h1>
           </section>
 	</section>
 
@@ -69,16 +69,9 @@
             <p>
               <span class="fragment">rpm,</span>
               <span class="fragment">dpkg,</span>
-              <span class="fragment">apt,</span>
-              <span class="fragment">yum,</span>
               <span class="fragment">rubygems,</span>
               <span class="fragment">bundler,</span>
-              <span class="fragment">CPAN,</span>
-              <span class="fragment">npm,</span>
-              <span class="fragment">jar,</span>
               <span class="fragment">zip,</span>
-              <span class="fragment">capistrano,</span>
-              <span class="fragment">maven,</span>
               <span class="fragment">docker,</span>
               <span class="fragment">rsync?</span>
             </p>
@@ -93,9 +86,6 @@
           <section><h2>rsync: the null package manager</h2></section>
           <section>
             <h2>Let's not kid ourselves: "deployment" is just "copying some files"</h2>
-          </section>
-          <section>
-            <h2>If rsync can do it, why can't my package manager?</h2>
           </section>
           <section>
             <h2>rsync can just as easily deploy <i>incorrectly</i> as <i>correctly</i></h2>
@@ -151,13 +141,13 @@
             <h3>Hardcode the specific hash of the package version in the built artefact</h3>
           </section>
           <section>
-            <h2>Structure of a nix path</h2>
-            <p><code><span class="fragment highlight-current-red">/nix/store</span>/<span class="fragment highlight-current-red">n0a1y0yd54sh10p7rdi0alysscvac5x5</span>-<span class="fragment highlight-current-red">certificate-transparency</span>-<span class="fragment highlight-current-red">2016-01-14</span>/<span class="fragment highlight-current-red">bin/ct</span></code></p>
+            <h2>The nix store</h2>
+            <h3>A content-addressable store, where packages have paths based on cryptographic hash</h3>
+            <h3>Once a package is created, it can't be changed (because the hash would have to change)</h3>
           </section>
           <section>
-            <h2>Showing dependencies</h2>
-            <p><code>$ nix-store --query --references /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
-            <p><code>$ nix-store --query --requisites /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
+            <h2>Structure of a nix path</h2>
+            <p><code><span class="fragment highlight-current-red">/nix/store</span>/<span class="fragment highlight-current-red">n0a1y0yd54sh10p7rdi0alysscvac5x5</span>-<span class="fragment highlight-current-red">certificate-transparency</span>-<span class="fragment highlight-current-red">2016-01-14</span>/<span class="fragment highlight-current-red">bin/ct</span></code></p>
           </section>
           <section>
             <h2>Locating dependencies</h2>
@@ -166,11 +156,17 @@
             <p>Only the <i>exact same version</i> is acceptable</p>
           </section>
           <section>
+            <h2>Showing dependencies</h2>
+            <p><code>$ nix-store --query --references /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
+            <p><code>$ nix-store --query --requisites /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
+          </section>
+          <section>
             <h2>How to deploy a package:</h2>
             <ul>
-            <li>Identify the package's dependencies (by hash)</li>
-            <li>Correctly deploy each of the package's dependencies (recursively if necessary)</li>
-            <li>Copy the package itself</li></ul>
+              <li>Identify the package's dependencies (by hash)</li>
+              <li>Correctly deploy each of the package's dependencies (recursively if necessary)</li>
+              <li>Copy the package itself</li>
+            </ul>
             <p>This works for <i>any</i> target machine (with matching arch & kernel): Ubuntu, RHEL, CentOS...</p>
             <p>Command: <code>nix-copy-closure</code></p>
           </section>
@@ -412,10 +408,83 @@ stdenv.mkDerivation rec {
             <h3>NixOS is a linux distribution built on Nix</h3>
           </section>
           <section>
-            <h2>The system as a nix expression</h2>
-            <h3></h3>
-            <h3></h3>
+            <h2>Store paths revisited</h2>
+            <h3>A store path doesn't have to be a directory</h3>
+            <h3>It can just be a single static file</h3>
+            <h3><code>/nix/store/mi14q2q22c1fvj4ck79q51j315yb9fr6-etc-hosts</code></h3>
           </section>
+          <section>
+            <h2>Store paths revisited</h2>
+            <h3>A derivation can take store paths as dependencies and create symlinks to them</h3>
+          </section>
+          <section>
+            <h2>Store paths revisited</h2>
+            <h3>Imagine this directory:</h3>
+            <pre><code>$ ls -l
+lrwxrwxrwx bashrc -&gt; /nix/store/r6i1gl85qch03qn7w5w0h5by3nz654c1-etc-bashrc
+lrwxrwxrwx fstab -&gt; /nix/store/9rf80psk56v90r23kgii9nmbhdxiq86r-etc-fstab
+lrwxrwxrwx hosts -&gt; /nix/store/mi14q2q22c1fvj4ck79q51j315yb9fr6-etc-hosts
+lrwxrwxrwx issue -&gt; /nix/store/i233z50axwxgbkf2n5hrqrmpq2ndjhi1-issue
+lrwxrwxrwx locale.conf -&gt; /nix/store/ldnwp9g7x6v6g5ms69n8zjy5j39lb6vj-locale.conf
+lrwxrwxrwx localtime -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-2015g/share/zoneinfo/Europe/London
+lrwxrwxrwx os-release -&gt; /nix/store/yn0p31bvgra01wnm2gnrali6dbh9k0gj-etc-os-release
+lrwxrwxrwx profile -&gt; /nix/store/9mj0i0psq7b27vvf7inw87ahgnfw1aq8-etc-profile
+lrwxrwxrwx protocols -&gt; /nix/store/4dqzkdz6699zh8bck82jl19mv759n37v-iana-etc-2.30/etc/protocols
+lrwxrwxrwx resolvconf.conf -&gt; /nix/store/qjmv1x2j1sp9m61k08xpb7ppqa92qxgs-etc-resolvconf.conf
+lrwxrwxrwx services -&gt; /nix/store/4dqzkdz6699zh8bck82jl19mv759n37v-iana-etc-2.30/etc/services
+lrwxrwxrwx shells -&gt; /nix/store/4b6n2yyx69ba0km3jajyjbms4cggjjc6-etc-shells
+lrwxrwxrwx sudoers -&gt; /nix/store/5656vj85srl1vhkywbhsmcpxpki77mpn-sudoers
+lrwxrwxrwx vconsole.conf -&gt; /nix/store/z18ipnvjp88r6iy8gydvxxlakd272vyh-vconsole.conf
+lrwxrwxrwx zoneinfo -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-2015g/share/zoneinfo
+            </code></pre>
+          </section>
+          <section>
+            <h2>NixOS: whole system configuration as a nix expression</h2>
+            <h3>Populate /etc with links to the nix store</h3>
+            <h3>A single toplevel nix expression defines the system</h3>
+          </section>
+          <section>
+            <h2>The system profile</h2>
+            <h3>/etc is a profile (if you squint)</h3>
+            <h3>You can update the toplevel configuration and rebuild the system</h3>
+            <h3>You can also <i>rollback</i> the system</h3>
+            <h3>(from the GRUB prompt if necessary)</h3>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h1>Warning labels</h1>
+          </section>
+          <section>
+            <h2>Security updates</h2>
+          </section>
+          <section>
+            <h2>Existing package managers</h2>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h1>Summary</h1>
+          </section>
+          <section>
+            <h2>Package management is about deployment</h2>
+            <h2>Deployment is about dependency management</h2>
+            <h2>Avoid conflicts, version mismatches by design</h2>
+          </section>
+        </section>
+        <section>
+          <h1>
+            Thanks!
+          </h1>
+	  <p>
+	    Philip Potter / <a href="http://twitter.com/philandstuff">@philandstuff</a>
+	  </p>
+	  <p>
+	    <a href="http://philandstuff.github.io/intro-to-nix/">philandstuff.github.io/intro-to-nix/</a>
+	  </p>
+	  <p>
+	    <a href="https://gds.blog.gov.uk/jobs/">UK Government Digital Service</a>
+	  </p>
         </section>
       </div>
 
