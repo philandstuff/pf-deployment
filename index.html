@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>reveal.js – The HTML Presentation Framework</title>
+    <title>Nix, the PhD Thesis</title>
 
     <meta name="author" content="Philip Potter">
 
@@ -37,26 +37,50 @@
 
       <!-- Any section element inside of this container is displayed as a slide -->
       <div class="slides">
-	<section>
-	  <h1>Intro to Nix and NixOS</h1>
-	  <p>
-	    Philip Potter / <a href="http://twitter.com/philandstuff">@philandstuff</a>
-	  </p>
-	  <p>
-	    <a href="http://philandstuff.github.io/intro-to-nix/">philandstuff.github.io/intro-to-nix/</a>
-	  </p>
-	  <p>
-	    <a href="https://gds.blog.gov.uk/jobs/">UK Government Digital Service</a>
-	  </p>
-	</section>
+        <section>
+	  <section>
+	    <h2><a href="http://nixos.org/~eelco/pubs/phd-thesis.pdf">The Purely Functional Software Deployment Model</a></h2>
+            <p>Eelco Dolstra, PhD Thesis, University of Utrecht</p>
+	    <p>
+	      Philip Potter / <a href="http://twitter.com/philandstuff">@philandstuff</a>
+	    </p>
+	    <p>
+	      <a href="http://philandstuff.github.io/pf-deployment/">philandstuff.github.io/pf-deployment/</a>
+	    </p>
+	    <p>
+	      <a href="https://gds.blog.gov.uk/jobs/">UK Government Digital Service</a>
+	    </p>
+	  </section>
+          <section>
+            <h2>Context</h2>
+            <p>PhD viva: 18th January 2006</p>
+          </section>
+        </section>
 
 	<section>
           <section>
-            <h1>What is Nix? What is NixOS?</h1>
+            <h2>Software deployment doesn't "feel" like a research topic</h2>
           </section>
           <section>
-            <h2>Nix is a package manager</h2>
-            <h2>NixOS is a distro based on Nix</h2>
+            <h2>System administration is often seen as more vocational than academic</h2>
+            <p>Tools like puppet, chef, rpm, dpkg written to scratch an itch</p>
+          </section>
+          <section>
+            <h2>(With exceptions, of course)</h2>
+            <p>M. Burgess, <a href="http://www.iu.hio.no/~mark/papers/paper1.pdf">
+                Cfengine: a site configuration engine
+              </a>, USENIX Computing systems, Vol8, No. 3 1995</p>
+            <p>In fact, there's a
+                whole <a href="http://www.iu.hio.no/cfengine/papers.html">
+                Cfengine papers page
+            </a></p>
+          </section>
+          <section>
+            <h2>This PhD thesis presents, first and foremost, a <i>theory</i> of software deployment</h2>
+            <p>The nix package manager is an implementation of that theory</p>
+            <p><small>see also
+            Naur's <a href="http://pages.cs.wisc.edu/~remzi/Naur.pdf">Programming
+            as Theory Building</a> for more exploration of this idea</small></p>
           </section>
 	</section>
 
@@ -78,17 +102,24 @@
           </section>
           <section>
             <h2>Package manager (n.): a tool that deploys software correctly</h2>
-            <h2 class="fragment">(under certain assumptions)</h2>
+          </section>
+          <section>
+            <h2>
+              Deployment (n.): getting computer programs from one
+              machine to another&mdash;and having them still work
+              when they get there.
+            </h2>
+            <p><small>From the first sentence of Chapter 1</small></p>
           </section>
 	</section>
 
         <section>
           <section><h2>rsync: the null package manager</h2></section>
           <section>
-            <h2>Let's not kid ourselves: "deployment" is just "copying some files"</h2>
+            <h2>"deployment" should be just "copying some files"</h2>
           </section>
           <section>
-            <h2>rsync can just as easily deploy <i>incorrectly</i> as <i>correctly</i></h2>
+            <h2>rsync allows you to shoot yourself in the foot</h2>
           </section>
         </section>
 
@@ -99,7 +130,7 @@
               <blockquote>given identical inputs, the software
                 should behave the same on an end-user machine as on the developer
                 machine</blockquote>
-              <p>-- from <a href="http://nixos.org/~eelco/pubs/phd-thesis.pdf">http://nixos.org/~eelco/pubs/phd-thesis.pdf</a>, section 1.1</p>
+              <p>-- section 1.1</p>
             </div>
           </section>
           <section>
@@ -156,7 +187,7 @@
             <p>Only the <i>exact same version</i> is acceptable</p>
           </section>
           <section>
-            <h2>Showing dependencies</h2>
+            <h2>Querying dependencies</h2>
             <p><code>$ nix-store --query --references /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
             <p><code>$ nix-store --query --requisites /nix/store/n0a1y0yd54sh10p7rdi0alysscvac5x5-certificate-transparency-2016-01-14</code></p>
           </section>
@@ -400,66 +431,117 @@ stdenv.mkDerivation rec {
         </section>
 
         <section>
-          <section><h1>NixOS</h1></section>
           <section>
-            <h2>Nix vs NixOS</h2>
-            <h3>Nix is just a package manager</h3>
-            <h3>Can target linux, OS X, freebsd...</h3>
-            <h3>NixOS is a linux distribution built on Nix</h3>
-          </section>
-          <section>
-            <h2>Store paths revisited</h2>
-            <h3>A store path doesn't have to be a directory</h3>
-            <h3>It can just be a single static file</h3>
-            <h3><code>/nix/store/mi14q2q22c1fvj4ck79q51j315yb9fr6-etc-hosts</code></h3>
-          </section>
-          <section>
-            <h2>Store paths revisited</h2>
-            <h3>A derivation can take store paths as dependencies and create symlinks to them</h3>
-          </section>
-          <section>
-            <h2>Store paths revisited</h2>
-            <h3>Imagine this directory:</h3>
-            <pre><code>$ ls -l
-lrwxrwxrwx bashrc -&gt; /nix/store/r6i1gl85qch03qn7w5w0h5by3nz654c1-etc-bashrc
-lrwxrwxrwx fstab -&gt; /nix/store/9rf80psk56v90r23kgii9nmbhdxiq86r-etc-fstab
-lrwxrwxrwx hosts -&gt; /nix/store/mi14q2q22c1fvj4ck79q51j315yb9fr6-etc-hosts
-lrwxrwxrwx issue -&gt; /nix/store/i233z50axwxgbkf2n5hrqrmpq2ndjhi1-issue
-lrwxrwxrwx locale.conf -&gt; /nix/store/ldnwp9g7x6v6g5ms69n8zjy5j39lb6vj-locale.conf
-lrwxrwxrwx localtime -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-2015g/share/zoneinfo/Europe/London
-lrwxrwxrwx os-release -&gt; /nix/store/yn0p31bvgra01wnm2gnrali6dbh9k0gj-etc-os-release
-lrwxrwxrwx profile -&gt; /nix/store/9mj0i0psq7b27vvf7inw87ahgnfw1aq8-etc-profile
-lrwxrwxrwx protocols -&gt; /nix/store/4dqzkdz6699zh8bck82jl19mv759n37v-iana-etc-2.30/etc/protocols
-lrwxrwxrwx resolvconf.conf -&gt; /nix/store/qjmv1x2j1sp9m61k08xpb7ppqa92qxgs-etc-resolvconf.conf
-lrwxrwxrwx services -&gt; /nix/store/4dqzkdz6699zh8bck82jl19mv759n37v-iana-etc-2.30/etc/services
-lrwxrwxrwx shells -&gt; /nix/store/4b6n2yyx69ba0km3jajyjbms4cggjjc6-etc-shells
-lrwxrwxrwx sudoers -&gt; /nix/store/5656vj85srl1vhkywbhsmcpxpki77mpn-sudoers
-lrwxrwxrwx vconsole.conf -&gt; /nix/store/z18ipnvjp88r6iy8gydvxxlakd272vyh-vconsole.conf
-lrwxrwxrwx zoneinfo -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-2015g/share/zoneinfo
-            </code></pre>
-          </section>
-          <section>
-            <h2>NixOS: whole system configuration as a nix expression</h2>
-            <h3>Populate /etc with links to the nix store</h3>
-            <h3>A single toplevel nix expression defines the system</h3>
-          </section>
-          <section>
-            <h2>The system profile</h2>
-            <h3>/etc is a profile (if you squint)</h3>
-            <h3>You can update the toplevel configuration and rebuild the system</h3>
-            <h3>You can also <i>rollback</i> the system</h3>
-            <h3>(from the GRUB prompt if necessary)</h3>
+            <h2>Functional programming parallels</h2>
           </section>
         </section>
         <section>
           <section>
-            <h1>Warning labels</h1>
+            <h2>Deployment as memory management (Ch 3)</h2>
           </section>
           <section>
-            <h2>Security updates</h2>
+            <h2>Runtime-provided dependency</h2>
+            <pre><code>class Foo {
+  Foo () {}
+  int run(Bar y) { return y.doIt(); }
+} </code></pre>
+            <pre><code>export PYTHONPATH=/path/to/foo-module
+python script-that-needs-foo-module.py</code></pre>
           </section>
           <section>
-            <h2>Existing package managers</h2>
+            <h2>Compile-time-provided dependency</h2>
+            <pre><code>class Foo {
+  int x;
+  Foo (Bar y) { x = y.doIt(); }
+  int run() { return x; }
+}</code></pre>
+            <pre><code>gcc -o foo foo.c -static -L/path/to/libjson -ljson 
+./foo            # no runtime dependency on libjson</code></pre>
+            <p>Note that <code>y</code> and <code>libjson</code> are not needed after construction or compilation, respectively</p>
+          </section>
+          <section>
+            <h2>Retained dependency</h2>
+            <pre><code>class Foo {
+  Bar x;
+  Foo (Bar y) { x = y; }
+  int run() { return x.doIt(); }
+}</code></pre>
+            <pre><code>gcc -o foo foo.c -L/path/to/libjson -ljson # no `-static`
+./foo            # runtime dependency on libjson.so</code></pre>
+            <p>
+              Here, <code>y</code> and <code>libjson</code> need to be
+              retained after construction or compilation,
+              respectively, or the constructed artefact will fail
+            </p>
+          </section>
+          <section>
+            <img src="deployment-as-memory-management.png" class="stretch">
+          </section>
+          <section>
+            <h2>Conservative GC</h2>
+            <p>Has a built artefact retained a dependency, or is it now unneeded?</p>
+            <p>Use a conservative GC: scan for pointer references</p>
+            <p>GC roots are user profiles, system profiles, etc</p>
+            <p>Scanning is simply <code>grep</code> for the package SHA256</p>
+          </section>
+          <section>
+            <h2>PS: pointer arithmetic</h2>
+            <p>It is possible to retain dependencies but "hide" them from the GC</p>
+            <p>
+              This problem manifests (in theory) in regular GC and in
+              nix's GC; and in practice is not a problem
+            </p>
+          </section>
+        </section>
+        <section>
+          <section>
+            <h2>Binary substitution as memoization</h2>
+            <p>A package description is a function that takes source code and returns compiled code</p>
+            <p>A binary substitution is a cached evaluation of the same function which can be used instead of rebuilding the package</p>
+            <p>(In this way we neatly have a single definition for source and binary packages: binary packages come "for free")</p>
+          </section>
+          <section>
+            <h2>Intensional vs extensional equality</h2>
+          </section>
+          <section>
+            <h2>Extensional equality</h2>
+            <p>Two functions $f$ and $g$ are <i>extensionally equal</i> if, for all $x$, $f(x) = g(x)$.</p>
+            <p>
+              Two software programs <code>foo</code>
+              and <code>bar</code> are <i>extensionally equal</i> if,
+              for all input, <code>foo</code> and <code>bar</code>
+              have the same behaviour.
+            </p>
+          </section>
+          <section>
+            <h2>Intensional equality</h2>
+            <p>
+              Two functions $f$ and $g$ are <i>intensionally equal</i>
+              if they have the same syntactic definition.
+            </p>
+            <p>
+              Two software programs <code>foo</code>
+              and <code>bar</code> are <i>intensionally equal</i> if
+              they have the same representation on disk,
+              byte-for-byte.
+            </p>
+          </section>
+          <section>
+            <h2>Purity of nix packages</h2>
+            <p>
+              Whether you accept substitution model depends on your
+              definition of function purity.
+            </p>
+            <p>
+              A nix build may, on repeated evaluation, produce
+              artefacts which are only extensionally equal, but not
+              intensionally.
+            </p>
+          </section>
+          <section>
+            <h2>Aside: reproducible builds</h2>
+            <p>There is a growing community around <a href="https://reproducible-builds.org/">reproducible builds</a> (eg <a href="https://twitter.com/ReproBuilds">@ReproBuilds</a>)</p>
+            <p>The value of reproducible builds is precisely that it makes builds respect intensional equality</p>
           </section>
         </section>
         <section>
@@ -469,7 +551,10 @@ lrwxrwxrwx zoneinfo -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-201
           <section>
             <h2>Package management is about deployment</h2>
             <h2>Deployment is about dependency management</h2>
-            <h2>Avoid conflicts, version mismatches by design</h2>
+            <h2>
+              Avoid conflicts, version mismatches by using the correct
+              theory
+            </h2>
           </section>
         </section>
         <section>
@@ -480,7 +565,7 @@ lrwxrwxrwx zoneinfo -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-201
 	    Philip Potter / <a href="http://twitter.com/philandstuff">@philandstuff</a>
 	  </p>
 	  <p>
-	    <a href="http://philandstuff.github.io/intro-to-nix/">philandstuff.github.io/intro-to-nix/</a>
+	    <a href="http://philandstuff.github.io/pf-deployment/">philandstuff.github.io/pf-deployment/</a>
 	  </p>
 	  <p>
 	    <a href="https://gds.blog.gov.uk/jobs/">UK Government Digital Service</a>
@@ -512,7 +597,9 @@ lrwxrwxrwx zoneinfo -&gt; /nix/store/j7hg0289hdcmw7fby9yhcklf50791c8z-tzdata-201
       { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
       { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
       { src: 'plugin/zoom-js/zoom.js', async: true },
-      { src: 'plugin/notes/notes.js', async: true }
+      { src: 'plugin/notes/notes.js', async: true },
+      // MathJax
+      { src: 'plugin/math/math.js', async: true }
       ]
       });
 
